@@ -1,98 +1,93 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import Animated, { FadeInUp, Easing } from 'react-native-reanimated';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { CardGrid } from '@/components/card-grid';
+import { EmptyState } from '@/components/empty-state';
+import { Colors, Spacing, Motion } from '@/constants/theme';
+import { useCards } from '@/hooks/use-cards';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HomeScreen() {
+  const scheme = useColorScheme();
+  const theme = Colors[scheme];
+  const { cards, loading } = useCards();
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={styles.header}>
+        <ThemedText type="title">ivault</ThemedText>
+        <ThemedText themeColor="gray500" style={styles.subtitle}>
+          digital id cards
         </ThemedText>
+        <View style={styles.hairline} />
+      </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+      {!loading && cards.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <CardGrid cards={cards} />
+      )}
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      {cards.length > 0 && (
+        <Animated.View
+          entering={FadeInUp
+            .duration(Motion.entrance)
+            .easing(Motion.strongEaseOut)
+          }
+        >
+          <Pressable
+            style={({ pressed }) => [
+              styles.fab,
+              { backgroundColor: theme.ink, opacity: pressed ? 0.85 : 1 },
+            ]}
+            onPress={() => router.push('/capture')}
+          >
+            <ThemedText style={[styles.fabText, { color: theme.background }]}>+</ThemedText>
+          </Pressable>
+        </Animated.View>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
+  safeArea: { flex: 1 },
+  header: {
     paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    paddingTop: Spacing.five,
+    paddingBottom: Spacing.three,
+    gap: Spacing.one,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
+  subtitle: {
+    fontFamily: 'GeistMono',
+    fontSize: 11,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  hairline: {
+    height: 1,
+    backgroundColor: '#e9e9e9',
+    marginTop: Spacing.three,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 40,
+    right: Spacing.four,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0 4 12 -6 rgba(0,0,0,0.3)',
+  },
+  fabText: {
+    fontFamily: 'Geist',
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: 500,
   },
 });

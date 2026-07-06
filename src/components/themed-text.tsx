@@ -1,27 +1,24 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: 'body' | 'title' | 'micro' | 'mono' | 'code';
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({ style, type = 'body', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
 
   return (
     <Text
       style={[
-        { color: theme[themeColor ?? 'text'] },
-        type === 'default' && styles.default,
+        { color: theme[themeColor ?? 'ink'] },
+        type === 'body' && styles.body,
         type === 'title' && styles.title,
-        type === 'small' && styles.small,
-        type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
-        type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
+        type === 'micro' && styles.micro,
+        type === 'mono' && styles.mono,
         type === 'code' && styles.code,
         style,
       ]}
@@ -31,43 +28,37 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
-  },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
+  body: {
+    fontFamily: 'Geist',
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: 400,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    fontFamily: 'GeistMono',
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: 400,
+    textTransform: 'lowercase',
   },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+  micro: {
+    fontFamily: 'GeistMono',
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: 400,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  link: {
-    lineHeight: 30,
-    fontSize: 14,
-  },
-  linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
+  mono: {
+    fontFamily: 'GeistMono',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 400,
   },
   code: {
-    fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
+    fontFamily: 'GeistMono',
     fontSize: 12,
+    lineHeight: 16,
+    fontWeight: 400,
   },
 });
