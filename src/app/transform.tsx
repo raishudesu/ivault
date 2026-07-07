@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Image, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -18,6 +18,18 @@ export default function TransformScreen() {
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [kbHeight, setKbHeight] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKbHeight(e.endCoordinates.height);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim() || !front || !back) return;
@@ -84,66 +96,69 @@ export default function TransformScreen() {
       <View style={styles.hairline} />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        contentInsetAdjustmentBehavior="automatic"
+        ref={scrollRef}
+        contentContainerStyle={[styles.scrollContent, Platform.OS === 'android' && { paddingBottom: kbHeight + Spacing.five }]}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
       >
-        <Animated.View
-          entering={FadeInUp.duration(Motion.entrance).easing(Motion.strongEaseOut)}
-        >
-          <ThemedText type="micro" themeColor="gray400" style={styles.sectionLabel}>
-            01 — front
-          </ThemedText>
-          <Image
-            source={{ uri: front }}
-            style={styles.preview}
-            resizeMode="contain"
-          />
-        </Animated.View>
+          <Animated.View
+            entering={FadeInUp.duration(Motion.entrance).easing(Motion.strongEaseOut)}
+          >
+            <ThemedText type="micro" themeColor="gray400" style={styles.sectionLabel}>
+              01 — front
+            </ThemedText>
+            <Image
+              source={{ uri: front }}
+              style={styles.preview}
+              resizeMode="contain"
+            />
+          </Animated.View>
 
-        <Animated.View
-          entering={FadeInUp
-            .duration(Motion.entrance)
-            .delay(Motion.stagger)
-            .easing(Motion.strongEaseOut)
-          }
-        >
-          <ThemedText type="micro" themeColor="gray400" style={[styles.sectionLabel, { marginTop: Spacing.section }]}>
-            02 — back
-          </ThemedText>
-          <Image
-            source={{ uri: back }}
-            style={styles.preview}
-            resizeMode="contain"
-          />
-        </Animated.View>
+          <Animated.View
+            entering={FadeInUp
+              .duration(Motion.entrance)
+              .delay(Motion.stagger)
+              .easing(Motion.strongEaseOut)
+            }
+          >
+            <ThemedText type="micro" themeColor="gray400" style={[styles.sectionLabel, { marginTop: Spacing.section }]}>
+              02 — back
+            </ThemedText>
+            <Image
+              source={{ uri: back }}
+              style={styles.preview}
+              resizeMode="contain"
+            />
+          </Animated.View>
 
-        <Animated.View
-          entering={FadeInUp
-            .duration(Motion.entrance)
-            .delay(Motion.stagger * 2)
-            .easing(Motion.strongEaseOut)
-          }
-          style={styles.form}
-        >
-          <TextInput
-            placeholder="card name (e.g. drivers license)"
-            placeholderTextColor={theme.gray400}
-            value={name}
-            onChangeText={setName}
-            selectTextOnFocus
-            style={[styles.input, { color: theme.ink, borderColor: theme.gray200 }]}
-          />
-          <TextInput
-            placeholder="note (optional)"
-            placeholderTextColor={theme.gray400}
-            value={note}
-            onChangeText={setNote}
-            multiline
-            style={[styles.input, styles.noteInput, { color: theme.ink, borderColor: theme.gray200 }]}
-          />
-        </Animated.View>
-      </ScrollView>
-    </SafeAreaView>
+          <Animated.View
+            entering={FadeInUp
+              .duration(Motion.entrance)
+              .delay(Motion.stagger * 2)
+              .easing(Motion.strongEaseOut)
+            }
+            style={styles.form}
+          >
+            <TextInput
+              placeholder="card name (e.g. drivers license)"
+              placeholderTextColor={theme.gray400}
+              value={name}
+              onChangeText={setName}
+              selectTextOnFocus
+              style={[styles.input, { color: theme.ink, borderColor: theme.gray200 }]}
+            />
+            <TextInput
+              placeholder="note (optional)"
+              placeholderTextColor={theme.gray400}
+              value={note}
+              onChangeText={setNote}
+              multiline
+              blurOnSubmit
+              style={[styles.input, styles.noteInput, { color: theme.ink, borderColor: theme.gray200 }]}
+            />
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
   );
 }
 
@@ -158,7 +173,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 14, fontWeight: 500 },
   hairline: { height: 1, backgroundColor: '#e9e9e9' },
-  scrollContent: { paddingHorizontal: Spacing.four, paddingBottom: Spacing.five },
+  scrollContent: { paddingHorizontal: Spacing.four, paddingTop: Spacing.three, paddingBottom: Spacing.five },
   sectionLabel: { marginBottom: Spacing.three, letterSpacing: 1 },
   preview: {
     width: '100%',
