@@ -1,15 +1,14 @@
-import { Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import Animated, { FadeInUp, Easing } from 'react-native-reanimated';
+import { router } from "expo-router";
+import { Pressable, StyleSheet, View } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { CardGrid } from '@/components/card-grid';
-import { EmptyState } from '@/components/empty-state';
-import { Colors, Spacing, Motion } from '@/constants/theme';
-import { useCards } from '@/hooks/use-cards';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { CardGrid } from "@/components/card-grid";
+import { EmptyState } from "@/components/empty-state";
+import { ThemedText } from "@/components/themed-text";
+import { Colors, Motion, Spacing } from "@/constants/theme";
+import { useCards } from "@/hooks/use-cards";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function HomeScreen() {
   const scheme = useColorScheme();
@@ -17,14 +16,19 @@ export default function HomeScreen() {
   const { cards, loading } = useCards();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+    >
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <ThemedText type="title">ivault</ThemedText>
           <Pressable
-            onPress={() => router.push('/settings')}
+            onPress={() => router.push("/settings")}
             hitSlop={8}
-            style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.6 }]}
+            style={({ pressed }) => [
+              styles.settingsBtn,
+              pressed && { opacity: 0.6 },
+            ]}
           >
             <ThemedText style={styles.settingsIcon} themeColor="gray400">
               settings
@@ -45,19 +49,20 @@ export default function HomeScreen() {
 
       {cards.length > 0 && (
         <Animated.View
-          entering={FadeInUp
-            .duration(Motion.entrance)
-            .easing(Motion.strongEaseOut)
-          }
+          entering={FadeInUp.duration(Motion.entrance).easing(
+            Motion.strongEaseOut,
+          )}
         >
           <Pressable
             style={({ pressed }) => [
               styles.fab,
               { backgroundColor: theme.ink, opacity: pressed ? 0.85 : 1 },
             ]}
-            onPress={() => router.push('/capture')}
+            onPress={() => router.push("/capture")}
           >
-            <ThemedText style={[styles.fabText, { color: theme.background }]}>+</ThemedText>
+            <ThemedText style={[styles.fabText, { color: theme.background }]}>
+              +
+            </ThemedText>
           </Pressable>
         </Animated.View>
       )}
@@ -74,43 +79,43 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   settingsBtn: {
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.two,
   },
   settingsIcon: {
-    fontFamily: 'GeistMono',
+    fontFamily: "GeistMono",
     fontSize: 11,
     letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   subtitle: {
-    fontFamily: 'GeistMono',
+    fontFamily: "GeistMono",
     fontSize: 11,
     letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   hairline: {
     height: 1,
     marginTop: Spacing.three,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 40,
     right: Spacing.four,
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: '0 4 12 -6 rgba(0,0,0,0.3)',
+    justifyContent: "center",
+    alignItems: "center",
+    boxShadow: "0 4 12 -6 rgba(0,0,0,0.3)",
   },
   fabText: {
-    fontFamily: 'Geist',
+    fontFamily: "Geist",
     fontSize: 20,
     lineHeight: 22,
     fontWeight: 500,
