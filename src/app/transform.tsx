@@ -5,35 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { CropEditor } from '@/components/crop-editor';
-import { applyPerspectiveWarp } from '@/components/perspective-warp';
 import { Colors, Spacing, Radii, Motion } from '@/constants/theme';
 import { useCards } from '@/hooks/use-cards';
-import { copyImageToStorage } from '@/utils/image-loader';
-import { distance, type Point } from '@/utils/geometry';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-const CROP_DISPLAY_WIDTH = 300;
-const MAX_OUTPUT_WIDTH = 1200;
-
-function getImageSize(uri: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    Image.getSize(uri, (width, height) => resolve({ width, height }), reject);
-  });
-}
-
-function scaleCornersToSource(
-  corners: [Point, Point, Point, Point],
-  srcWidth: number,
-  srcHeight: number
-): [Point, Point, Point, Point] {
-  const aspect = srcWidth / srcHeight;
-  const dispH = CROP_DISPLAY_WIDTH / aspect;
-  const sx = srcWidth / CROP_DISPLAY_WIDTH;
-  const sy = srcHeight / dispH;
-  return corners.map((c) => ({ x: c.x * sx, y: c.y * sy })) as [Point, Point, Point, Point];
-}
 
 export default function TransformScreen() {
   const { front, back } = useLocalSearchParams<{ front: string; back: string }>();
@@ -43,8 +18,6 @@ export default function TransformScreen() {
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
-  const [frontCorners, setFrontCorners] = useState<[Point, Point, Point, Point] | null>(null);
-  const [backCorners, setBackCorners] = useState<[Point, Point, Point, Point] | null>(null);
 
   const handleSave = async () => {
     if (!name.trim() || !front || !back) return;
@@ -52,55 +25,30 @@ export default function TransformScreen() {
     if (!docsDir) return;
     setSaving(true);
 
-    const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
-    const cardDir = docsDir + 'cards/' + id + '/';
-    await FileSystem.makeDirectoryAsync(cardDir, { intermediates: true });
+    try {
+      const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+      const cardDir = docsDir + 'cards/' + id + '/';
+      await FileSystem.makeDirectoryAsync(cardDir, { intermediates: true });
 
-    const frontDest = cardDir + 'front.jpg';
-    const backDest = cardDir + 'back.jpg';
+      await Promise.all([
+        FileSystem.copyAsync({ from: front, to: cardDir + 'front.jpg' }),
+        FileSystem.copyAsync({ from: back, to: cardDir + 'back.jpg' }),
+      ]);
 
-    const [frontSize, backSize] = await Promise.all([
-      getImageSize(front),
-      getImageSize(back),
-    ]);
+      insertCard({
+        id,
+        name: name.trim(),
+        note: note.trim() || null,
+        frontImagePath: cardDir + 'front.jpg',
+        backImagePath: cardDir + 'back.jpg',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
 
-    const warpImage = async (
-      uri: string,
-      corners: [Point, Point, Point, Point] | null,
-      dest: string,
-      size: { width: number; height: number }
-    ) => {
-      if (corners) {
-        const srcCorners = scaleCornersToSource(corners, size.width, size.height);
-        // Output dimensions follow the card's actual size in the source photo
-        // so the warped result keeps the card's aspect ratio.
-        const [tl, tr, br, bl] = srcCorners;
-        const cardW = (distance(tl, tr) + distance(bl, br)) / 2;
-        const cardH = (distance(tl, bl) + distance(tr, br)) / 2;
-        const scale = Math.min(1, MAX_OUTPUT_WIDTH / cardW);
-        const outputW = Math.max(1, Math.round(cardW * scale));
-        const outputH = Math.max(1, Math.round(cardH * scale));
-        return applyPerspectiveWarp(uri, srcCorners, outputW, outputH, dest);
-      }
-      return copyImageToStorage(uri, dest);
-    };
-
-    await Promise.all([
-      warpImage(front, frontCorners, frontDest, frontSize),
-      warpImage(back, backCorners, backDest, backSize),
-    ]);
-
-    insertCard({
-      id,
-      name: name.trim(),
-      note: note.trim() || null,
-      frontImagePath: frontDest,
-      backImagePath: backDest,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    router.replace('/');
+      router.replace('/');
+    } catch {
+      setSaving(false);
+    }
   };
 
   if (!front || !back) {
@@ -145,7 +93,11 @@ export default function TransformScreen() {
           <ThemedText type="micro" themeColor="gray400" style={styles.sectionLabel}>
             01 — front
           </ThemedText>
-          <CropEditor key={front} imageUri={front} onCornersChange={setFrontCorners} />
+          <Image
+            source={{ uri: front }}
+            style={styles.preview}
+            resizeMode="contain"
+          />
         </Animated.View>
 
         <Animated.View
@@ -158,7 +110,11 @@ export default function TransformScreen() {
           <ThemedText type="micro" themeColor="gray400" style={[styles.sectionLabel, { marginTop: Spacing.section }]}>
             02 — back
           </ThemedText>
-          <CropEditor key={back} imageUri={back} onCornersChange={setBackCorners} />
+          <Image
+            source={{ uri: back }}
+            style={styles.preview}
+            resizeMode="contain"
+          />
         </Animated.View>
 
         <Animated.View
@@ -204,6 +160,15 @@ const styles = StyleSheet.create({
   hairline: { height: 1, backgroundColor: '#e9e9e9' },
   scrollContent: { paddingHorizontal: Spacing.four, paddingBottom: Spacing.five },
   sectionLabel: { marginBottom: Spacing.three, letterSpacing: 1 },
+  preview: {
+    width: '100%',
+    height: 200,
+    borderRadius: Radii.small,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: '#e9e9e9',
+    backgroundColor: '#f5f5f5',
+  },
   form: { marginTop: Spacing.section, gap: Spacing.three },
   input: {
     fontFamily: 'GeistMono',
