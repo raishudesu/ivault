@@ -19,11 +19,22 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <ThemedText type="title">ivault</ThemedText>
+        <View style={styles.headerRow}>
+          <ThemedText type="title">ivault</ThemedText>
+          <Pressable
+            onPress={() => router.push('/settings')}
+            hitSlop={8}
+            style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.6 }]}
+          >
+            <ThemedText style={styles.settingsIcon} themeColor="gray400">
+              settings
+            </ThemedText>
+          </Pressable>
+        </View>
         <ThemedText themeColor="gray500" style={styles.subtitle}>
           digital id cards
         </ThemedText>
-        <View style={styles.hairline} />
+        <View style={[styles.hairline, { backgroundColor: theme.gray200 }]} />
       </View>
 
       {!loading && cards.length === 0 ? (
@@ -62,6 +73,21 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.three,
     gap: Spacing.one,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  settingsBtn: {
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+  },
+  settingsIcon: {
+    fontFamily: 'GeistMono',
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
   subtitle: {
     fontFamily: 'GeistMono',
     fontSize: 11,
@@ -70,7 +96,6 @@ const styles = StyleSheet.create({
   },
   hairline: {
     height: 1,
-    backgroundColor: '#e9e9e9',
     marginTop: Spacing.three,
   },
   fab: {

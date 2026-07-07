@@ -6,6 +6,7 @@ import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/ge
 import { Text, View } from 'react-native';
 
 import { initDb } from '@/db';
+import { ThemeProvider } from '@/contexts/theme-context';
 
 initDb();
 
@@ -22,19 +23,25 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen
-          name="capture"
-          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-        />
-        <Stack.Screen
-          name="transform"
-          options={{ presentation: 'card', animation: 'slide_from_right' }}
-        />
-        <Stack.Screen name="card/[id]" />
-      </Stack>
+      <ThemeProvider>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen
+            name="capture"
+            options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="transform"
+            options={{ presentation: 'card', animation: 'slide_from_right' }}
+          />
+          <Stack.Screen name="card/[id]" />
+          <Stack.Screen
+            name="settings"
+            options={{ animation: 'slide_from_right' }}
+          />
+        </Stack>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
