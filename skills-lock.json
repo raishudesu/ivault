@@ -61,6 +61,12 @@
       "skillPath": "plugins/expo/skills/expo-ui/SKILL.md",
       "computedHash": "39c617d5aff2e0123caa35c13991e2c6d33ea3dc154b432972fb6ecbc73c2434"
     },
+    "fallow": {
+      "source": "fallow-rs/fallow-skills",
+      "sourceType": "github",
+      "skillPath": "fallow/skills/fallow/SKILL.md",
+      "computedHash": "c62705dd570636a634a5cf08158b20e3e3e90a5b68871ed32b18337c76314299"
+    },
     "native-data-fetching": {
       "source": "expo/skills",
       "sourceType": "github",

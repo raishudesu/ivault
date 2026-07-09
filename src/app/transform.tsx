@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Image, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, Image, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -10,16 +10,47 @@ import { useCards } from '@/hooks/use-cards';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+const CATEGORIES = [
+  { value: 'id' as const, label: 'digital id' },
+  { value: 'document' as const, label: 'document' },
+];
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function useImageHeight(uri: string | undefined): number {
+  const [height, setHeight] = useState(200);
+  useEffect(() => {
+    if (!uri) return;
+    Image.getSize(uri, (w, h) => {
+      const maxH = SCREEN_WIDTH - Spacing.four * 2;
+      const ratio = h / w;
+      setHeight(Math.min(maxH, Math.round(ratio * (SCREEN_WIDTH - Spacing.four * 2))));
+    }, () => setHeight(200));
+  }, [uri]);
+  return height;
+}
+
 export default function TransformScreen() {
-  const { front, back } = useLocalSearchParams<{ front: string; back: string }>();
+  const params = useLocalSearchParams<{ front?: string; back?: string; pages?: string; category?: string }>();
   const scheme = useColorScheme();
   const theme = Colors[scheme];
   const { insertCard } = useCards();
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
+  const [category, setCategory] = useState<'id' | 'document'>((params.category as 'id' | 'document') || 'id');
   const [saving, setSaving] = useState(false);
   const [kbHeight, setKbHeight] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+
+  const pagePaths: string[] = useMemo(() => {
+    if (params.pages) {
+      try { return JSON.parse(params.pages); } catch { return []; }
+    }
+    const paths: string[] = [];
+    if (params.front) paths.push(params.front);
+    if (params.back) paths.push(params.back);
+    return paths;
+  }, [params.pages, params.front, params.back]);
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -31,8 +62,10 @@ export default function TransformScreen() {
     return () => { show.remove(); hide.remove(); };
   }, []);
 
+  const isDoc = category === 'document';
+
   const handleSave = async () => {
-    if (!name.trim() || !front || !back) return;
+    if (!name.trim() || pagePaths.length === 0) return;
     const docsDir = FileSystem.documentDirectory;
     if (!docsDir) return;
     setSaving(true);
@@ -42,17 +75,23 @@ export default function TransformScreen() {
       const cardDir = docsDir + 'cards/' + id + '/';
       await FileSystem.makeDirectoryAsync(cardDir, { intermediates: true });
 
-      await Promise.all([
-        FileSystem.copyAsync({ from: front, to: cardDir + 'front.jpg' }),
-        FileSystem.copyAsync({ from: back, to: cardDir + 'back.jpg' }),
-      ]);
+      const savedPages: string[] = [];
+      const tasks = pagePaths.map((path, i) => {
+        const filename = `page_${i}.jpg`;
+        const dest = cardDir + filename;
+        savedPages.push(dest);
+        return FileSystem.copyAsync({ from: path, to: dest });
+      });
+      await Promise.all(tasks);
 
       insertCard({
         id,
         name: name.trim(),
         note: note.trim() || null,
-        frontImagePath: cardDir + 'front.jpg',
-        backImagePath: cardDir + 'back.jpg',
+        category,
+        frontImagePath: savedPages[0],
+        backImagePath: savedPages[1] ?? null,
+        pages: savedPages.length > 1 ? JSON.stringify(savedPages) : null,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -63,11 +102,11 @@ export default function TransformScreen() {
     }
   };
 
-  if (!front || !back) {
+  if (pagePaths.length === 0) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ThemedText type="mono">missing images. please retake.</ThemedText>
+          <ThemedText type="mono">missing image. please retake.</ThemedText>
           <Pressable onPress={() => router.back()} style={{ marginTop: Spacing.three }}>
             <ThemedText type="micro" themeColor="gray500">go back</ThemedText>
           </Pressable>
@@ -101,46 +140,47 @@ export default function TransformScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
       >
-          <Animated.View
-            entering={FadeInUp.duration(Motion.entrance).easing(Motion.strongEaseOut)}
-          >
-            <ThemedText type="micro" themeColor="gray400" style={styles.sectionLabel}>
-              01 — front
-            </ThemedText>
-            <Image
-              source={{ uri: front }}
-              style={styles.preview}
-              resizeMode="contain"
-            />
-          </Animated.View>
+          {pagePaths.map((uri, i) => (
+            <PagePreview key={uri} uri={uri} index={i} isDoc={isDoc} total={pagePaths.length} />
+          ))}
 
           <Animated.View
             entering={FadeInUp
               .duration(Motion.entrance)
-              .delay(Motion.stagger)
-              .easing(Motion.strongEaseOut)
-            }
-          >
-            <ThemedText type="micro" themeColor="gray400" style={[styles.sectionLabel, { marginTop: Spacing.section }]}>
-              02 — back
-            </ThemedText>
-            <Image
-              source={{ uri: back }}
-              style={styles.preview}
-              resizeMode="contain"
-            />
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeInUp
-              .duration(Motion.entrance)
-              .delay(Motion.stagger * 2)
+              .delay(pagePaths.length > 1 ? Motion.stagger * 2 : Motion.stagger)
               .easing(Motion.strongEaseOut)
             }
             style={styles.form}
           >
+            <View style={styles.categoryRow}>
+              {CATEGORIES.map((cat) => {
+                const active = category === cat.value;
+                return (
+                  <Pressable
+                    key={cat.value}
+                    onPress={() => setCategory(cat.value)}
+                    style={[
+                      styles.categoryPill,
+                      {
+                        backgroundColor: active ? theme.ink : 'transparent',
+                        borderColor: active ? theme.ink : theme.gray300,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      type="micro"
+                      style={{
+                        color: active ? theme.background : theme.gray500,
+                      }}
+                    >
+                      {cat.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
             <TextInput
-              placeholder="card name (e.g. drivers license)"
+              placeholder={isDoc ? 'document name (e.g. birth certificate)' : 'card name (e.g. drivers license)'}
               placeholderTextColor={theme.gray400}
               value={name}
               onChangeText={setName}
@@ -159,6 +199,37 @@ export default function TransformScreen() {
           </Animated.View>
         </ScrollView>
       </SafeAreaView>
+  );
+}
+
+function PagePreview({ uri, index, isDoc, total }: { uri: string; index: number; isDoc: boolean; total: number }) {
+  const height = useImageHeight(uri);
+  const scheme = useColorScheme();
+  const theme = Colors[scheme];
+  const enterDelay = index * Motion.stagger;
+
+  return (
+    <Animated.View
+      entering={FadeInUp
+        .duration(Motion.entrance)
+        .delay(enterDelay)
+        .easing(Motion.strongEaseOut)
+      }
+    >
+      {!isDoc && (
+        <ThemedText type="micro" themeColor="gray400" style={[styles.sectionLabel, index > 0 && { marginTop: Spacing.section }]}>
+          {String(index + 1).padStart(2, '0')} — {index === 0 ? 'front' : 'back'}
+        </ThemedText>
+      )}
+      <Image
+        source={{ uri }}
+        style={[
+          styles.preview,
+          { height, borderColor: theme.gray200, backgroundColor: theme.gray100 },
+        ]}
+        resizeMode="contain"
+      />
+    </Animated.View>
   );
 }
 
@@ -185,6 +256,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   form: { marginTop: Spacing.section, gap: Spacing.three },
+  categoryRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  categoryPill: {
+    paddingVertical: Spacing.one + 2,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+  },
   input: {
     fontFamily: 'GeistMono',
     fontSize: 13,

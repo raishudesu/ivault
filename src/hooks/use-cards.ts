@@ -48,7 +48,7 @@ export function useCards() {
     if (!db) return;
     const card = db.select().from(cardsSchema).where(eq(cardsSchema.id, id)).get();
     if (card) {
-      await deleteCardImages(card.frontImagePath, card.backImagePath);
+      await deleteCardImages(card.frontImagePath, card.backImagePath ?? null);
     }
     db.delete(cardsSchema).where(eq(cardsSchema.id, id)).run();
     refresh();

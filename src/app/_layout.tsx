@@ -27,6 +27,7 @@ export default function RootLayout() {
         <StatusBar style="auto" />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
+          <Stack.Screen name="add" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen
             name="capture"
             options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
@@ -36,6 +37,10 @@ export default function RootLayout() {
             options={{ presentation: 'card', animation: 'slide_from_right' }}
           />
           <Stack.Screen name="card/[id]" />
+          <Stack.Screen
+            name="viewer"
+            options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+          />
           <Stack.Screen
             name="settings"
             options={{ animation: 'slide_from_right' }}

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Dimensions, Image as RNImage, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import Stack from 'expo-router/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,23 +8,93 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FlipCard } from '@/components/flip-card';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Spacing, Radii } from '@/constants/theme';
 import { useCards } from '@/hooks/use-cards';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import type { Card } from '@/db/schema';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function PageThumb({ uri, index, onPress }: { uri: string; index: number; onPress: () => void }) {
+  const [h, setH] = useState(200);
+  useEffect(() => {
+    RNImage.getSize(uri, (w, imgH) => {
+      const maxH = SCREEN_WIDTH - Spacing.four * 2;
+      setH(Math.min(maxH, Math.round((imgH / w) * (SCREEN_WIDTH - Spacing.four * 2))));
+    }, () => setH(200));
+  }, [uri]);
+
+  return (
+    <Pressable onPress={onPress}>
+      <Image
+        source={{ uri }}
+        style={[styles.docImage, { height: h }]}
+        contentFit="contain"
+      />
+    </Pressable>
+  );
+}
 
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const scheme = useColorScheme();
   const theme = Colors[scheme];
-  const { getCard, deleteCard } = useCards();
+  const { getCard, updateCard, deleteCard } = useCards();
   const [card, setCard] = useState<Card | null>(null);
+  const [name, setName] = useState('');
+  const [note, setNote] = useState('');
+  const [kbHeight, setKbHeight] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const allPages = useMemo(() => {
+    if (!card) return [];
+    if (card.pages) {
+      try { return JSON.parse(card.pages) as string[]; } catch { return [card.frontImagePath]; }
+    }
+    const p = [card.frontImagePath];
+    if (card.backImagePath) p.push(card.backImagePath);
+    return p;
+  }, [card]);
 
   useEffect(() => {
     if (!id) return;
     const result = getCard(id);
     setCard(result ?? null);
+    if (result) {
+      setName(result.name);
+      setNote(result.note ?? '');
+    }
   }, [id]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKbHeight(e.endCoordinates.height);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  const save = useCallback(() => {
+    if (!card) return;
+    const trimmedName = name.trim();
+    const trimmedNote = note.trim();
+    if (!trimmedName) return;
+    if (trimmedName === card.name && trimmedNote === (card.note ?? '')) return;
+    updateCard(card.id, {
+      name: trimmedName,
+      note: trimmedNote || null,
+    });
+    setCard((prev) =>
+      prev ? { ...prev, name: trimmedName, note: trimmedNote || null } : null
+    );
+  }, [card, name, note, updateCard]);
+
+  const openViewer = useCallback((index: number) => {
+    if (!card) return;
+    router.push(`/viewer?uris=${encodeURIComponent(JSON.stringify(allPages))}&index=${index}`);
+  }, [card, allPages]);
 
   if (!card) {
     return (
@@ -54,11 +125,13 @@ export default function CardDetailScreen() {
     );
   };
 
+  const isId = card.category === 'id' && !!card.backImagePath;
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: card.name,
+          title: name,
           headerShown: true,
           headerBackTitle: 'back',
           headerRight: () => (
@@ -72,43 +145,130 @@ export default function CardDetailScreen() {
         }}
       />
 
-      <View style={styles.cardContainer}>
-        <FlipCard
-          frontImagePath={card.frontImagePath}
-          backImagePath={card.backImagePath}
-          width={320}
-          height={202}
-        />
-      </View>
+      <ScrollView
+        ref={scrollRef}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[
+          styles.scrollContent,
+          Platform.OS === 'android' && { paddingBottom: kbHeight + Spacing.five },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {isId ? (
+          <View style={styles.cardContainer}>
+            <FlipCard
+              frontImagePath={card.frontImagePath}
+              backImagePath={card.backImagePath!}
+              width={320}
+              height={202}
+            />
+          </View>
+        ) : (
+          <View style={styles.pageList}>
+            {allPages.map((uri, i) => (
+              <PageThumb key={uri} uri={uri} index={i} onPress={() => openViewer(i)} />
+            ))}
+          </View>
+        )}
 
-      {card.note && (
-        <ThemedView style={styles.noteSection}>
-          <ThemedText type="micro" themeColor="gray400" style={styles.noteLabel}>
+        <ThemedView style={styles.fieldsSection}>
+          <ThemedText type="micro" themeColor="gray400" style={styles.fieldLabel}>
+            name
+          </ThemedText>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            onBlur={save}
+            selectTextOnFocus
+            placeholder="card name"
+            placeholderTextColor={theme.gray400}
+            style={[styles.input, { color: theme.ink, borderColor: theme.gray200 }]}
+          />
+          <ThemedText
+            type="micro"
+            themeColor="gray400"
+            style={[styles.fieldLabel, { marginTop: Spacing.three }]}
+          >
             note
           </ThemedText>
-          <ThemedText type="mono" themeColor="gray500" selectable>
-            {card.note}
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            onBlur={save}
+            multiline
+            blurOnSubmit
+            placeholder="add a note..."
+            placeholderTextColor={theme.gray400}
+            style={[styles.input, styles.noteInput, { color: theme.ink, borderColor: theme.gray200 }]}
+          />
+          <ThemedText
+            type="micro"
+            themeColor="gray400"
+            style={[styles.fieldLabel, { marginTop: Spacing.three }]}
+          >
+            category
           </ThemedText>
+          <View style={styles.categoryPill}>
+            <ThemedText type="micro" style={{ color: theme.gray500 }}>
+              {card.category === 'id' ? 'digital id' : 'document'}
+            </ThemedText>
+          </View>
         </ThemedView>
-      )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+  },
   cardContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.five,
   },
-  noteSection: {
+  pageList: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    gap: Spacing.three,
+  },
+  fieldsSection: {
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
     gap: Spacing.two,
     borderTopWidth: 1,
     borderTopColor: '#e9e9e9',
   },
-  noteLabel: { letterSpacing: 1 },
+  fieldLabel: { letterSpacing: 1 },
+  input: {
+    fontFamily: 'GeistMono',
+    fontSize: 13,
+    borderWidth: 1,
+    borderRadius: Radii.input,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  noteInput: { minHeight: 80, textAlignVertical: 'top' },
+  categoryPill: {
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.half + 1,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+    borderColor: '#e9e9e9',
+  },
+  docImage: {
+    width: '100%',
+    height: 320,
+    borderRadius: Radii.medium,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: '#e9e9e9',
+    backgroundColor: '#f5f5f5',
+  },
 });

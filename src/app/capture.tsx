@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { launchScanner } from '@dariyd/react-native-document-scanner';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -16,6 +16,8 @@ function createSessionId() {
 export default function CaptureScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme];
+  const { type } = useLocalSearchParams<{ type?: string }>();
+  const captureType = type === 'document' ? 'document' : 'id';
   const sessionIdRef = useRef(createSessionId());
   const launchedRef = useRef(false);
 
@@ -35,6 +37,21 @@ export default function CaptureScreen() {
           router.back();
           return;
         }
+
+        if (captureType === 'document') {
+          const pages: string[] = [];
+          for (let i = 0; i < frontResult.images.length; i++) {
+            const dest = sessionDir + `page_${i}.jpg`;
+            await FileSystem.copyAsync({ from: frontResult.images[i].uri, to: dest });
+            pages.push(dest);
+          }
+          router.replace({
+            pathname: '/transform',
+            params: { pages: JSON.stringify(pages), category: 'document' },
+          });
+          return;
+        }
+
         const frontUri = frontResult.images[0].uri;
         const frontTemp = sessionDir + 'front.jpg';
         await FileSystem.copyAsync({ from: frontUri, to: frontTemp });
@@ -48,7 +65,7 @@ export default function CaptureScreen() {
         const backTemp = sessionDir + 'back.jpg';
         await FileSystem.copyAsync({ from: backUri, to: backTemp });
 
-        router.replace({ pathname: '/transform', params: { front: frontTemp, back: backTemp } });
+        router.replace({ pathname: '/transform', params: { front: frontTemp, back: backTemp, category: 'id' } });
       } catch {
         router.back();
       }

@@ -1,5 +1,6 @@
+import { useMemo } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -14,6 +15,21 @@ export default function HomeScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme];
   const { cards, loading } = useCards();
+
+  const ids = useMemo(() => cards.filter((c) => c.category === "id"), [cards]);
+  const docs = useMemo(
+    () => cards.filter((c) => c.category === "document"),
+    [cards]
+  );
+  const hasCards = ids.length > 0 || docs.length > 0;
+
+  const sectionHeader = (label: string) => (
+    <View style={styles.sectionHeader}>
+      <ThemedText themeColor="gray500" style={styles.sectionLabel}>
+        {label}
+      </ThemedText>
+    </View>
+  );
 
   return (
     <SafeAreaView
@@ -35,30 +51,53 @@ export default function HomeScreen() {
             </ThemedText>
           </Pressable>
         </View>
-        <ThemedText themeColor="gray500" style={styles.subtitle}>
-          digital id cards
-        </ThemedText>
         <View style={[styles.hairline, { backgroundColor: theme.gray200 }]} />
       </View>
 
-      {!loading && cards.length === 0 ? (
+      {!loading && !hasCards ? (
         <EmptyState />
       ) : (
-        <CardGrid cards={cards} />
+        <ScrollView
+          style={styles.scrollArea}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+        >
+          {ids.length > 0 && (
+            <View>
+              {sectionHeader("digital ids")}
+              <CardGrid cards={ids} scrollEnabled={false} />
+            </View>
+          )}
+          {docs.length > 0 && (
+            <View>
+              {sectionHeader("documents")}
+              <CardGrid cards={docs} scrollEnabled={false} />
+            </View>
+          )}
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ThemedText type="mono" themeColor="gray400">
+                loading...
+              </ThemedText>
+            </View>
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
       )}
 
-      {cards.length > 0 && (
+      {hasCards && (
         <Animated.View
           entering={FadeInUp.duration(Motion.entrance).easing(
             Motion.strongEaseOut,
           )}
+          style={styles.fabWrapper}
         >
           <Pressable
             style={({ pressed }) => [
               styles.fab,
               { backgroundColor: theme.ink, opacity: pressed ? 0.85 : 1 },
             ]}
-            onPress={() => router.push("/capture")}
+            onPress={() => router.push("/add")}
           >
             <ThemedText style={[styles.fabText, { color: theme.background }]}>
               +
@@ -76,12 +115,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.five,
     paddingBottom: Spacing.three,
-    gap: Spacing.one,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: Spacing.three,
   },
   settingsBtn: {
     paddingVertical: Spacing.one,
@@ -93,20 +132,35 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
-  subtitle: {
+  hairline: {
+    height: 1,
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  sectionHeader: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
+  },
+  sectionLabel: {
     fontFamily: "GeistMono",
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
-  hairline: {
-    height: 1,
-    marginTop: Spacing.three,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 80,
   },
-  fab: {
+  fabWrapper: {
     position: "absolute",
     bottom: 40,
     right: Spacing.four,
+  },
+  fab: {
     width: 44,
     height: 44,
     borderRadius: 22,

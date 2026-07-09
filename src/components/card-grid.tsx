@@ -8,9 +8,10 @@ import type { Card } from '@/db/schema';
 
 interface CardGridProps {
   cards: Card[];
+  scrollEnabled?: boolean;
 }
 
-export function CardGrid({ cards }: CardGridProps) {
+export function CardGrid({ cards, scrollEnabled = true }: CardGridProps) {
   return (
     <FlatList
       data={cards}
@@ -20,6 +21,8 @@ export function CardGrid({ cards }: CardGridProps) {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
+      scrollEnabled={scrollEnabled}
+      nestedScrollEnabled
       renderItem={({ item, index }) => (
         <Animated.View
           entering={FadeInUp
@@ -43,7 +46,6 @@ export function CardGrid({ cards }: CardGridProps) {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: 100,
   },
   row: { gap: Spacing.three },
 });

@@ -16,7 +16,7 @@ export function EmptyState() {
       <Animated.View
         entering={FadeInUp.duration(Motion.entrance).easing(Motion.strongEaseOut)}
       >
-        <ThemedText type="mono" style={styles.title}>no cards yet</ThemedText>
+        <ThemedText type="mono" style={styles.title}>vault is empty</ThemedText>
       </Animated.View>
       <Animated.View
         entering={FadeInUp
@@ -26,7 +26,7 @@ export function EmptyState() {
         }
       >
         <ThemedText type="mono" themeColor="gray500" style={styles.text}>
-          tap below to add your first id card
+          tap below to add your first id or document
         </ThemedText>
       </Animated.View>
       <Animated.View
@@ -41,10 +41,10 @@ export function EmptyState() {
             styles.button,
             { backgroundColor: theme.ink, opacity: pressed ? 0.85 : 1 },
           ]}
-          onPress={() => router.push('/capture')}
+          onPress={() => router.push('/add')}
         >
           <ThemedText style={[styles.buttonText, { color: theme.background }]}>
-            add card
+            add item
           </ThemedText>
         </Pressable>
       </Animated.View>
