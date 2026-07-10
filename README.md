@@ -5,8 +5,8 @@
 <h1 align="center">IVault</h1>
 
 <p align="center">
-  <strong>Digital ID Card Vault</strong><br>
-  A private, offline-first mobile app to scan, store, and view your ID cards.
+  <strong>Documents Vault</strong><br>
+  A private, offline-first mobile app to scan, store, and view your important documents.
   Built with <a href="https://expo.dev">Expo</a> + React Native.
 </p>
 
@@ -27,6 +27,7 @@
 - **Document scanning** — Uses the native document scanner to capture the front and back of ID cards sequentially.
 - **Offline-first** — All data and images are stored locally on-device. No network requests, no accounts, no telemetry.
 - **3D flip viewer** — Swipe or tap to flip between the front and back of a card, powered by Reanimated shared values and gestures.
+- **Save to device gallery** — Save card images to the native photo library during creation or from the card detail view, using `expo-media-library`.
 - **Light / Dark / System theme** — Persisted theme preference with a clean monochrome palette.
 - **Review & save** — Preview both sides, add a name and optional note, then save to the local database.
 - **Card grid** — 2-column grid of cards with staggered entrance animations.
@@ -34,16 +35,16 @@
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | [Expo](https://expo.dev) SDK 54 |
-| UI | React Native 0.81, Reanimated 4, Gesture Handler 2 |
+| Layer      | Technology                                                            |
+| ---------- | --------------------------------------------------------------------- |
+| Framework  | [Expo](https://expo.dev) SDK 54                                       |
+| UI         | React Native 0.81, Reanimated 4, Gesture Handler 2                    |
 | Navigation | [Expo Router](https://docs.expo.dev/router/introduction) (file-based) |
-| Database | SQLite via `expo-sqlite` + [Drizzle ORM](https://orm.drizzle.team) |
-| Fonts | Geist & Geist Mono (`@expo-google-fonts/geist`) |
-| Scanner | `@dariyd/react-native-document-scanner` |
-| Images | `expo-image`, stored as JPG files in `FileSystem.documentDirectory` |
-| TypeScript | Strict mode, path aliases `@/*` → `./src/*` |
+| Database   | SQLite via `expo-sqlite` + [Drizzle ORM](https://orm.drizzle.team)    |
+| Fonts      | Geist & Geist Mono (`@expo-google-fonts/geist`)                       |
+| Scanner    | `@dariyd/react-native-document-scanner`                               |
+| Images     | `expo-image`, stored as JPG files in `FileSystem.documentDirectory`   |
+| TypeScript | Strict mode, path aliases `@/*` → `./src/*`                           |
 
 ## Getting Started
 
@@ -80,6 +81,51 @@ npm run android  # Open directly in Android emulator
 ```bash
 npm run lint
 ```
+
+## Building with EAS
+
+Build and distribute the app using [EAS Build](https://docs.expo.dev/build/introduction/).
+
+### Prerequisites
+
+- [EAS CLI](https://docs.expo.dev/build/setup/#install-the-latest-eas-cli): `npm install -g eas-cli`
+- Log in to your Expo account: `eas login`
+
+### Build profiles
+
+| Profile       | Type                  | Use case                          |
+| ------------- | --------------------- | --------------------------------- |
+| `development` | Dev client            | Debug builds with the dev menu    |
+| `preview`     | Internal distribution | Share with testers via QR or link |
+| `production`  | App store release     | Production binary for submission  |
+
+### Build an APK (Android)
+
+```bash
+eas build --platform android --profile preview
+```
+
+For a development build:
+
+```bash
+eas build --platform android --profile development
+```
+
+For a production build:
+
+```bash
+eas build --platform android --profile production
+```
+
+### Build for iOS
+
+```bash
+eas build --platform ios --profile preview
+```
+
+> **Note:** iOS builds require an active Apple Developer account and are only available on macOS.
+
+For all available options, see the [EAS Build documentation](https://docs.expo.dev/build/introduction/).
 
 ## Project Structure
 

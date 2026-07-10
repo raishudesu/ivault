@@ -27,7 +27,7 @@ function RadioRow({
   label: string;
   selected: boolean;
   onSelect: (v: ThemeMode) => void;
-  theme: typeof Colors.light;
+  theme: typeof Colors.light | typeof Colors.dark;
 }) {
   return (
     <Pressable
