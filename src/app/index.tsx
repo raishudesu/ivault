@@ -161,17 +161,17 @@ const styles = StyleSheet.create({
     right: Spacing.four,
   },
   fab: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
     boxShadow: "0 4 12 -6 rgba(0,0,0,0.3)",
   },
   fabText: {
     fontFamily: "Geist",
-    fontSize: 20,
-    lineHeight: 22,
+    fontSize: 24,
+    lineHeight: 26,
     fontWeight: 500,
   },
 });

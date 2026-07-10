@@ -1,18 +1,19 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing, Radii, Colors } from '@/constants/theme';
-import { useThemeMode, type ThemeMode } from '@/contexts/theme-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Colors, Radii, Spacing } from "@/constants/theme";
+import { useThemeMode, type ThemeMode } from "@/contexts/theme-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
 ];
 
 function RadioRow({
@@ -31,7 +32,10 @@ function RadioRow({
   return (
     <Pressable
       onPress={() => onSelect(value)}
-      style={({ pressed }) => [styles.radioRow, pressed && styles.radioRowPressed]}
+      style={({ pressed }) => [
+        styles.radioRow,
+        pressed && styles.radioRowPressed,
+      ]}
     >
       <ThemedText>{label}</ThemedText>
       <View
@@ -40,7 +44,9 @@ function RadioRow({
           { borderColor: selected ? theme.ink : theme.gray300 },
         ]}
       >
-        {selected && <View style={[styles.radioFill, { backgroundColor: theme.ink }]} />}
+        {selected && (
+          <View style={[styles.radioFill, { backgroundColor: theme.ink }]} />
+        )}
       </View>
     </Pressable>
   );
@@ -52,7 +58,9 @@ export default function SettingsScreen() {
   const theme = Colors[scheme];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+    >
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -66,40 +74,58 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.section}>
-          <ThemedText type="micro" themeColor="gray500" style={styles.sectionLabel}>
+          <ThemedText
+            type="micro"
+            themeColor="gray500"
+            style={styles.sectionLabel}
+          >
             about
           </ThemedText>
           <ThemedView type="gray50" style={styles.card}>
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={styles.appIcon}
+              contentFit="contain"
+            />
             <ThemedText type="mono" style={styles.appName}>
               ivault
             </ThemedText>
             <ThemedText themeColor="gray500" style={styles.version}>
-              Version {Constants.expoConfig?.version ?? '1.0.0'}
+              Version {Constants.expoConfig?.version ?? "1.0.0"}
             </ThemedText>
-            <View style={[styles.divider, { backgroundColor: theme.gray200 }]} />
+            <View
+              style={[styles.divider, { backgroundColor: theme.gray200 }]}
+            />
             <ThemedText themeColor="gray500">
-              Digital ID Card Vault
+              Your Vault for Important Documents
             </ThemedText>
           </ThemedView>
         </View>
 
         <View style={styles.section}>
-          <ThemedText type="micro" themeColor="gray500" style={styles.sectionLabel}>
+          <ThemedText
+            type="micro"
+            themeColor="gray500"
+            style={styles.sectionLabel}
+          >
             data privacy
           </ThemedText>
           <ThemedView type="gray50" style={styles.card}>
             <ThemedText>
-              IVault is built as an{' '}
-              <ThemedText type="mono">offline-first</ThemedText>{' '}
-              application.
+              IVault is built as an{" "}
+              <ThemedText type="mono">offline-first</ThemedText> application.
             </ThemedText>
-            <View style={[styles.divider, { backgroundColor: theme.gray200 }]} />
+            <View
+              style={[styles.divider, { backgroundColor: theme.gray200 }]}
+            />
             <ThemedText themeColor="gray500">
-              All your documents and data are stored exclusively on your
-              device. Nothing is ever sent to any server, API, or third
-              party. Your data stays yours, always.
+              All your documents and data are stored exclusively on your device.
+              Nothing is ever sent to any server, API, or third party. Your data
+              stays yours, always.
             </ThemedText>
-            <View style={[styles.divider, { backgroundColor: theme.gray200 }]} />
+            <View
+              style={[styles.divider, { backgroundColor: theme.gray200 }]}
+            />
             <ThemedText themeColor="gray500">
               No accounts, no telemetry, no tracking.
             </ThemedText>
@@ -107,7 +133,11 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText type="micro" themeColor="gray500" style={styles.sectionLabel}>
+          <ThemedText
+            type="micro"
+            themeColor="gray500"
+            style={styles.sectionLabel}
+          >
             appearance
           </ThemedText>
           <ThemedView type="gray50" style={styles.card}>
@@ -131,8 +161,8 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.five,
@@ -141,8 +171,8 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   backArrow: {
     fontSize: 18,
@@ -164,6 +194,11 @@ const styles = StyleSheet.create({
     padding: Spacing.five,
     gap: Spacing.three,
   },
+  appIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+  },
   appName: {
     fontSize: 18,
     lineHeight: 24,
@@ -176,9 +211,9 @@ const styles = StyleSheet.create({
     height: 1,
   },
   radioRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.one,
   },
@@ -190,8 +225,8 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   radioFill: {
     width: 10,

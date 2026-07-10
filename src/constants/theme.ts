@@ -25,11 +25,6 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light;
 
-export const Fonts = {
-  body: 'Geist',
-  mono: 'GeistMono',
-};
-
 export const Spacing = {
   half: 2,
   one: 4,

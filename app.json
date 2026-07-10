@@ -10,20 +10,17 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "infoPlist": {
-        "NSCameraUsageDescription": "IVault needs camera access to scan your ID cards."
+        "NSCameraUsageDescription": "IVault needs camera access to scan your ID cards.",
+        "NSPhotoLibraryAddUsageDescription": "IVault saves scanned documents to your photo library when you choose to export them."
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "CAMERA"
-      ],
+      "permissions": ["CAMERA"],
       "package": "com.raishu.IVault"
     },
     "web": {
@@ -40,7 +37,15 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "IVault needs access to your photo library to save scanned documents.",
+          "savePhotosPermission": "IVault needs access to save scanned documents to your photo library."
+        }
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

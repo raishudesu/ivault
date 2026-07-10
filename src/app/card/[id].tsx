@@ -11,11 +11,12 @@ import { FlipCard } from '@/components/flip-card';
 import { Colors, Spacing, Radii } from '@/constants/theme';
 import { useCards } from '@/hooks/use-cards';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as MediaLibrary from 'expo-media-library';
 import type { Card } from '@/db/schema';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-function PageThumb({ uri, index, onPress }: { uri: string; index: number; onPress: () => void }) {
+function PageThumb({ uri, onPress }: { uri: string; onPress: () => void }) {
   const [h, setH] = useState(200);
   useEffect(() => {
     RNImage.getSize(uri, (w, imgH) => {
@@ -44,6 +45,7 @@ export default function CardDetailScreen() {
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
   const [kbHeight, setKbHeight] = useState(0);
+  const [savingToGallery, setSavingToGallery] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   const allPages = useMemo(() => {
@@ -125,6 +127,31 @@ export default function CardDetailScreen() {
     );
   };
 
+  const handleSaveToGallery = async () => {
+    setSavingToGallery(true);
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('permission denied', 'gallery access is needed to save images.');
+        return;
+      }
+      const results = await Promise.allSettled(
+        allPages.map((p) => MediaLibrary.saveToLibraryAsync(p))
+      );
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (succeeded > 0) {
+        Alert.alert('saved to gallery', `${succeeded} image${succeeded > 1 ? 's' : ''} saved.${failed > 0 ? ` ${failed} failed.` : ''}`);
+      } else {
+        Alert.alert('error', 'failed to save images to gallery.');
+      }
+    } catch {
+      Alert.alert('error', 'something went wrong.');
+    } finally {
+      setSavingToGallery(false);
+    }
+  };
+
   const isId = card.category === 'id' && !!card.backImagePath;
 
   return (
@@ -145,77 +172,98 @@ export default function CardDetailScreen() {
         }}
       />
 
-      <ScrollView
-        ref={scrollRef}
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.scrollContent,
-          Platform.OS === 'android' && { paddingBottom: kbHeight + Spacing.five },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {isId ? (
-          <View style={styles.cardContainer}>
-            <FlipCard
-              frontImagePath={card.frontImagePath}
-              backImagePath={card.backImagePath!}
-              width={320}
-              height={202}
-            />
-          </View>
-        ) : (
-          <View style={styles.pageList}>
-            {allPages.map((uri, i) => (
-              <PageThumb key={uri} uri={uri} index={i} onPress={() => openViewer(i)} />
-            ))}
-          </View>
-        )}
+      <View style={{ flex: 1 }}>
+        <ScrollView
+          ref={scrollRef}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.scrollContent,
+            Platform.OS === 'android' && { paddingBottom: kbHeight + Spacing.six },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {isId ? (
+            <View style={styles.cardContainer}>
+              <FlipCard
+                frontImagePath={card.frontImagePath}
+                backImagePath={card.backImagePath!}
+                width={320}
+                height={202}
+              />
+            </View>
+          ) : (
+            <View style={styles.pageList}>
+              {allPages.map((uri, i) => (
+                <PageThumb key={uri} uri={uri} onPress={() => openViewer(i)} />
+              ))}
+            </View>
+          )}
 
-        <ThemedView style={styles.fieldsSection}>
-          <ThemedText type="micro" themeColor="gray400" style={styles.fieldLabel}>
-            name
-          </ThemedText>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            onBlur={save}
-            selectTextOnFocus
-            placeholder="card name"
-            placeholderTextColor={theme.gray400}
-            style={[styles.input, { color: theme.ink, borderColor: theme.gray200 }]}
-          />
-          <ThemedText
-            type="micro"
-            themeColor="gray400"
-            style={[styles.fieldLabel, { marginTop: Spacing.three }]}
-          >
-            note
-          </ThemedText>
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            onBlur={save}
-            multiline
-            blurOnSubmit
-            placeholder="add a note..."
-            placeholderTextColor={theme.gray400}
-            style={[styles.input, styles.noteInput, { color: theme.ink, borderColor: theme.gray200 }]}
-          />
-          <ThemedText
-            type="micro"
-            themeColor="gray400"
-            style={[styles.fieldLabel, { marginTop: Spacing.three }]}
-          >
-            category
-          </ThemedText>
-          <View style={styles.categoryPill}>
-            <ThemedText type="micro" style={{ color: theme.gray500 }}>
-              {card.category === 'id' ? 'digital id' : 'document'}
+          <ThemedView style={styles.fieldsSection}>
+            <ThemedText type="micro" themeColor="gray400" style={styles.fieldLabel}>
+              name
             </ThemedText>
-          </View>
-        </ThemedView>
-      </ScrollView>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              onBlur={save}
+              selectTextOnFocus
+              placeholder="card name"
+              placeholderTextColor={theme.gray400}
+              style={[styles.input, { color: theme.ink, borderColor: theme.gray200 }]}
+            />
+            <ThemedText
+              type="micro"
+              themeColor="gray400"
+              style={[styles.fieldLabel, { marginTop: Spacing.three }]}
+            >
+              note
+            </ThemedText>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              onBlur={save}
+              multiline
+              blurOnSubmit
+              placeholder="add a note..."
+              placeholderTextColor={theme.gray400}
+              style={[styles.input, styles.noteInput, { color: theme.ink, borderColor: theme.gray200 }]}
+            />
+            <ThemedText
+              type="micro"
+              themeColor="gray400"
+              style={[styles.fieldLabel, { marginTop: Spacing.three }]}
+            >
+              category
+            </ThemedText>
+            <View style={styles.categoryPill}>
+              <ThemedText type="micro" style={{ color: theme.gray500 }}>
+                {card.category === 'id' ? 'digital id' : 'document'}
+              </ThemedText>
+            </View>
+          </ThemedView>
+        </ScrollView>
+
+        <Pressable
+          onPress={handleSaveToGallery}
+          disabled={savingToGallery}
+          style={[
+            styles.fab,
+            {
+              backgroundColor: theme.ink,
+              opacity: savingToGallery ? 0.6 : 1,
+            },
+          ]}
+        >
+          <ThemedText
+            type="micro"
+            style={{ color: theme.background, letterSpacing: 1 }}
+          >
+            {savingToGallery ? 'saving...' : 'save to gallery'}
+          </ThemedText>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -261,6 +309,19 @@ const styles = StyleSheet.create({
     borderRadius: Radii.pill,
     borderWidth: 1,
     borderColor: '#e9e9e9',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: Spacing.five,
+    right: Spacing.four,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.five,
+    borderRadius: Radii.pill,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   docImage: {
     width: '100%',
