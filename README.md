@@ -14,6 +14,7 @@
   <a href="#features">Features</a> •
   <a href="#tech-stack">Tech Stack</a> •
   <a href="#getting-started">Getting Started</a> •
+  <a href="#development-build-required">Development Build</a> •
   <a href="#project-structure">Project Structure</a> •
   <a href="#privacy">Privacy</a> •
   <a href="#contributing">Contributing</a> •
@@ -24,7 +25,7 @@
 
 ## Features
 
-- **Document scanning** — Uses the native document scanner to capture the front and back of ID cards sequentially.
+- **Document scanning** — Uses the native document scanner to capture the front and back of ID cards sequentially. Requires a [development build](#development-build-required) (not Expo Go).
 - **Offline-first** — All data and images are stored locally on-device. No network requests, no accounts, no telemetry.
 - **3D flip viewer** — Swipe or tap to flip between the front and back of a card, powered by Reanimated shared values and gestures.
 - **Save to device gallery** — Save card images to the native photo library during creation or from the card detail view, using `expo-media-library`.
@@ -52,8 +53,8 @@
 
 - [Node.js](https://nodejs.org) >= 18
 - [Expo CLI](https://docs.expo.dev/get-started/installation/)
-- iOS: Xcode (macOS only) or [Expo Go](https://expo.dev/go)
-- Android: Android Studio or [Expo Go](https://expo.dev/go)
+- iOS: Xcode (macOS only)
+- Android: Android Studio
 
 ### Install
 
@@ -61,20 +62,37 @@
 npm install
 ```
 
-### Run
+### Development build required
+
+The document scanner (`@dariyd/react-native-document-scanner`) is a native module that is **not included in [Expo Go](https://expo.dev/go)**. To scan documents, run the app in a [development build](https://docs.expo.dev/develop/development-builds/introduction/).
+
+**Local build** (simulator, emulator, or connected device):
+
+```bash
+npm run ios      # iOS
+npm run android  # Android
+```
+
+These commands compile the native app with the scanner module and start Metro.
+
+**EAS cloud build** (physical devices without a local toolchain):
+
+```bash
+eas build --platform android --profile development
+eas build --platform ios --profile development
+```
+
+Install the resulting build on your device, then connect to Metro with `npx expo start --dev-client`.
+
+### Run Metro only
+
+If you already have a development build installed:
 
 ```bash
 npm start
 ```
 
-Then press `i` for iOS simulator or `a` for Android emulator. You can also scan the QR code with Expo Go on a physical device.
-
-### Platform-specific commands
-
-```bash
-npm run ios      # Open directly in iOS simulator
-npm run android  # Open directly in Android emulator
-```
+For EAS-built dev clients, use `npx expo start --dev-client` instead.
 
 ### Lint
 
