@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CardGrid } from "@/components/card-grid";
 import { EmptyState } from "@/components/empty-state";
 import { ThemedText } from "@/components/themed-text";
-import { Colors, Motion, Spacing } from "@/constants/theme";
+import { Colors, Motion, Radii, Spacing } from "@/constants/theme";
 import { useCards } from "@/hooks/use-cards";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -15,6 +15,7 @@ export default function HomeScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme];
   const { cards, loading } = useCards();
+  const [layout, setLayout] = useState<"grid" | "list">("grid");
 
   const ids = useMemo(() => cards.filter((c) => c.category === "id"), [cards]);
   const docs = useMemo(
@@ -38,18 +39,59 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <ThemedText type="title">ivault</ThemedText>
-          <Pressable
-            onPress={() => router.push("/settings")}
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.settingsBtn,
-              pressed && { opacity: 0.6 },
-            ]}
-          >
-            <ThemedText style={styles.settingsIcon} themeColor="gray400">
-              settings
-            </ThemedText>
-          </Pressable>
+          <View style={styles.headerActions}>
+            {hasCards && (
+              <View
+                accessibilityRole="radiogroup"
+                style={[
+                  styles.layoutControl,
+                  {
+                    backgroundColor: theme.gray100,
+                    borderColor: theme.gray200,
+                  },
+                ]}
+              >
+                {(["grid", "list"] as const).map((option) => {
+                  const selected = layout === option;
+                  return (
+                    <Pressable
+                      key={option}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`${option} view`}
+                      onPress={() => setLayout(option)}
+                      style={({ pressed }) => [
+                        styles.layoutButton,
+                        selected && { backgroundColor: theme.ink },
+                        pressed && { opacity: 0.65 },
+                      ]}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.layoutButtonText,
+                          { color: selected ? theme.background : theme.gray500 },
+                        ]}
+                      >
+                        {option}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+            <Pressable
+              onPress={() => router.push("/settings")}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.settingsBtn,
+                pressed && { opacity: 0.6 },
+              ]}
+            >
+              <ThemedText style={styles.settingsIcon} themeColor="gray400">
+                settings
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
         <View style={[styles.hairline, { backgroundColor: theme.gray200 }]} />
       </View>
@@ -65,13 +107,13 @@ export default function HomeScreen() {
           {ids.length > 0 && (
             <View>
               {sectionHeader("digital ids")}
-              <CardGrid cards={ids} scrollEnabled={false} />
+              <CardGrid cards={ids} scrollEnabled={false} layout={layout} />
             </View>
           )}
           {docs.length > 0 && (
             <View>
               {sectionHeader("documents")}
-              <CardGrid cards={docs} scrollEnabled={false} />
+              <CardGrid cards={docs} scrollEnabled={false} layout={layout} />
             </View>
           )}
           {loading && (
@@ -121,6 +163,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.three,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+  },
+  layoutControl: {
+    flexDirection: "row",
+    padding: 2,
+    borderRadius: Radii.input,
+    borderCurve: "continuous",
+    borderWidth: 1,
+  },
+  layoutButton: {
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    borderRadius: 4,
+    borderCurve: "continuous",
+  },
+  layoutButtonText: {
+    fontFamily: "GeistMono",
+    fontSize: 9,
+    lineHeight: 14,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
   },
   settingsBtn: {
     paddingVertical: Spacing.one,

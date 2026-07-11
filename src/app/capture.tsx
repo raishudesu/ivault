@@ -32,7 +32,8 @@ export default function CaptureScreen() {
         const sessionDir = cache + 'capture/' + sessionIdRef.current + '/';
         await FileSystem.makeDirectoryAsync(sessionDir, { intermediates: true });
 
-        const frontResult = await launchScanner({ quality: 0.8 });
+        const pageLimit = captureType === 'id' ? 1 : 10;
+        const frontResult = await launchScanner({ quality: 0.8, pageLimit });
         if (frontResult.didCancel || frontResult.error || !frontResult.images?.length) {
           router.back();
           return;
@@ -56,7 +57,7 @@ export default function CaptureScreen() {
         const frontTemp = sessionDir + 'front.jpg';
         await FileSystem.copyAsync({ from: frontUri, to: frontTemp });
 
-        const backResult = await launchScanner({ quality: 0.8 });
+        const backResult = await launchScanner({ quality: 0.8, pageLimit: 1 });
         if (backResult.didCancel || backResult.error || !backResult.images?.length) {
           router.back();
           return;
@@ -70,7 +71,7 @@ export default function CaptureScreen() {
         router.back();
       }
     })();
-  }, []);
+  }, [captureType]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>

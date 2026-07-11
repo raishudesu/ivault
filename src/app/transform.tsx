@@ -242,7 +242,7 @@ export default function TransformScreen() {
           <TextInput
             placeholder={
               isDoc
-                ? "document name (e.g. birth certificate)"
+                ? "document name (e.g. receipt)"
                 : "card name (e.g. drivers license)"
             }
             placeholderTextColor={theme.gray400}

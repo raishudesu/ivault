@@ -9,15 +9,33 @@ interface CardThumbnailProps {
   frontImagePath: string;
   name: string;
   onPress: () => void;
+  layout?: 'grid' | 'list';
 }
 
-export function CardThumbnail({ frontImagePath, name, onPress }: CardThumbnailProps) {
+export function CardThumbnail({
+  frontImagePath,
+  name,
+  onPress,
+  layout = 'grid',
+}: CardThumbnailProps) {
+  const isList = layout === 'list';
+
   return (
-    <Pressable style={styles.container} onPress={onPress}>
-      <ThemedView type="gray50" style={styles.card}>
+    <Pressable
+      accessibilityRole="button"
+      style={[styles.container, isList && styles.listContainer]}
+      onPress={onPress}
+    >
+      <ThemedView type="gray50" style={[styles.card, isList && styles.listCard]}>
         <Image source={{ uri: frontImagePath }} style={styles.image} contentFit="cover" />
       </ThemedView>
-      <ThemedText type="mono" numberOfLines={1} style={styles.name}>{name}</ThemedText>
+      <ThemedText
+        type="mono"
+        numberOfLines={1}
+        style={[styles.name, isList && styles.listName]}
+      >
+        {name}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -39,5 +57,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: Spacing.two,
     paddingHorizontal: Spacing.one,
+  },
+  listContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  listCard: {
+    width: 112,
+    flexShrink: 0,
+  },
+  listName: {
+    flex: 1,
+    marginTop: 0,
+    paddingHorizontal: 0,
+    fontSize: 14,
   },
 });

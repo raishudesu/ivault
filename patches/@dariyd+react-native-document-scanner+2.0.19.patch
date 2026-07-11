@@ -1,0 +1,63 @@
+diff --git a/node_modules/@dariyd/react-native-document-scanner/android/src/main/java/com/docscanner/DocumentScannerModule.java b/node_modules/@dariyd/react-native-document-scanner/android/src/main/java/com/docscanner/DocumentScannerModule.java
+index 0fe9fff..1e1e81b 100644
+--- a/node_modules/@dariyd/react-native-document-scanner/android/src/main/java/com/docscanner/DocumentScannerModule.java
++++ b/node_modules/@dariyd/react-native-document-scanner/android/src/main/java/com/docscanner/DocumentScannerModule.java
+@@ -148,10 +148,15 @@ public class DocumentScannerModule extends com.docscanner.NativeDocumentScannerS
+     }
+ 
+     private void startScanner(Activity activity) {
++        int pageLimit = 10;
++        if (scannerOptions != null && scannerOptions.hasKey("pageLimit")) {
++            pageLimit = Math.max(1, scannerOptions.getInt("pageLimit"));
++        }
++
+         // Configure the scanner
+         GmsDocumentScannerOptions.Builder optionsBuilder = new GmsDocumentScannerOptions.Builder()
+                 .setGalleryImportAllowed(false)
+-                .setPageLimit(10)
++                .setPageLimit(pageLimit)
+                 .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG, GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
+                 .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL);
+ 
+diff --git a/node_modules/@dariyd/react-native-document-scanner/index.d.ts b/node_modules/@dariyd/react-native-document-scanner/index.d.ts
+index 50d9cb4..c4424ea 100644
+--- a/node_modules/@dariyd/react-native-document-scanner/index.d.ts
++++ b/node_modules/@dariyd/react-native-document-scanner/index.d.ts
+@@ -102,6 +102,13 @@ export interface ScanOptions {
+    * @default false
+    */
+   includeLocationExif?: boolean;
++
++  /**
++   * Maximum number of pages that can be captured in one scan
++   *
++   * @default 10
++   */
++  pageLimit?: number;
+ }
+ 
+ /**
+diff --git a/node_modules/@dariyd/react-native-document-scanner/index.js b/node_modules/@dariyd/react-native-document-scanner/index.js
+index c491a78..14f3a80 100644
+--- a/node_modules/@dariyd/react-native-document-scanner/index.js
++++ b/node_modules/@dariyd/react-native-document-scanner/index.js
+@@ -23,6 +23,7 @@ const DEFAULT_OPTIONS = {
+   includeBase64: false,
+   includeExif: false,
+   includeLocationExif: false,
++  pageLimit: 10,
+ };
+ 
+ export function launchScanner(options = {}, callback) {
+diff --git a/node_modules/@dariyd/react-native-document-scanner/src/NativeDocumentScanner.ts b/node_modules/@dariyd/react-native-document-scanner/src/NativeDocumentScanner.ts
+index 4d7403e..517c173 100644
+--- a/node_modules/@dariyd/react-native-document-scanner/src/NativeDocumentScanner.ts
++++ b/node_modules/@dariyd/react-native-document-scanner/src/NativeDocumentScanner.ts
+@@ -24,6 +24,7 @@ export interface Options {
+   includeBase64?: boolean;
+   includeExif?: boolean;
+   includeLocationExif?: boolean;
++  pageLimit?: number;
+ }
+ 
+ export interface Spec extends TurboModule {

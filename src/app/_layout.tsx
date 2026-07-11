@@ -3,12 +3,60 @@ import { StatusBar } from 'expo-status-bar';
 import Stack from 'expo-router/stack';
 import { useFonts, Geist_400Regular, Geist_500Medium, Geist_600SemiBold } from '@expo-google-fonts/geist';
 import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/geist-mono';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Colors } from '@/constants/theme';
 import { initDb } from '@/db';
 import { ThemeProvider } from '@/contexts/theme-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 initDb();
+
+function ThemedNavigation() {
+  const scheme = useColorScheme();
+  const theme = Colors[scheme];
+
+  return (
+    <>
+      <StatusBar style={scheme === 'light' ? 'dark' : 'light'} animated />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen
+          name="add"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.65],
+            sheetGrabberVisible: true,
+            gestureEnabled: true,
+            headerShown: true,
+            title: 'add to vault',
+            headerBackTitle: 'back',
+            headerStyle: { backgroundColor: theme.background },
+            headerTintColor: theme.ink,
+            headerTitleStyle: { fontFamily: 'GeistMono', fontSize: 15, fontWeight: 400 },
+          }}
+        />
+        <Stack.Screen
+          name="capture"
+          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="transform"
+          options={{ presentation: 'card', animation: 'slide_from_right' }}
+        />
+        <Stack.Screen name="card/[id]" />
+        <Stack.Screen
+          name="viewer"
+          options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{ animation: 'slide_from_right' }}
+        />
+      </Stack>
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -24,28 +72,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="add" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen
-            name="capture"
-            options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="transform"
-            options={{ presentation: 'card', animation: 'slide_from_right' }}
-          />
-          <Stack.Screen name="card/[id]" />
-          <Stack.Screen
-            name="viewer"
-            options={{ presentation: 'fullScreenModal', animation: 'fade' }}
-          />
-          <Stack.Screen
-            name="settings"
-            options={{ animation: 'slide_from_right' }}
-          />
-        </Stack>
+        <ThemedNavigation />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

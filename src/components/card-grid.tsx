@@ -9,15 +9,23 @@ import type { Card } from '@/db/schema';
 interface CardGridProps {
   cards: Card[];
   scrollEnabled?: boolean;
+  layout?: 'grid' | 'list';
 }
 
-export function CardGrid({ cards, scrollEnabled = true }: CardGridProps) {
+export function CardGrid({
+  cards,
+  scrollEnabled = true,
+  layout = 'grid',
+}: CardGridProps) {
+  const isGrid = layout === 'grid';
+
   return (
     <FlatList
+      key={layout}
       data={cards}
       keyExtractor={(item) => item.id}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
+      numColumns={isGrid ? 2 : 1}
+      columnWrapperStyle={isGrid ? styles.row : undefined}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
@@ -35,6 +43,7 @@ export function CardGrid({ cards, scrollEnabled = true }: CardGridProps) {
           <CardThumbnail
             frontImagePath={item.frontImagePath}
             name={item.name}
+            layout={layout}
             onPress={() => router.push(`/card/${item.id}`)}
           />
         </Animated.View>
